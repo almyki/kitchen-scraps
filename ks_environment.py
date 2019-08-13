@@ -1,5 +1,6 @@
 
 #### Holds classes to set up Kitchen Scraps' Background, Grids.
+import pygame
 
 class Background():
     """Create the background and screen."""
@@ -16,7 +17,7 @@ class Background():
 
     def refresh_screen(self):
         """Refresh the screen with fill, blit, flip."""
-        self.fill_color = (255, 255, 255)
+        self.fill_color = (255,0,0)
         self.screen.fill(self.fill_color)
         self.screen.blit(self.bg_srf, self.rect)
 
@@ -46,7 +47,6 @@ class Grid():
                 grid.append(this_xy)
                 # Move coordinates to right by one cell width.
                 xy[0] += self.cell_size[0]
-                print(f"Test: {this_xy}")
             # Star new row. Move down by one cell height, reset x to origin.
             xy[0] = self.origin[0]
             xy[1] += self.cell_size[1]
@@ -57,19 +57,13 @@ class Grid():
         img_srf = pygame.transform.scale2x(img_srf)
         img_srf.rect = img_srf.get_rect()
 
-    def fill_grid(self, screen, filler_items=[]):
+    def fill_grid(self, screen, filler_items):
         """Fill the grid with image surfaces from a list of items."""
-        # Must test double-sizing
-        self.empty_cells = []
-        for xy in self.grid:
-            if z < len(filler_items):
-                filler_items[z].img_srf.set_colorkey((255,255,255))
-                filler_items[z].rect.move_ip(pygame.Rect(xy[0], xy[1]))
-                self.double_size(filler_items[z].img_srf)
-            else:
-                self.empty_cells.append(xy)
+        for filler_item in filler_items:
+            filler_item.fill_empty_cell(self.empty_cells)
+            screen.blit(filler_item.img_srf, filler_item.rect)
 
-        # This draws circles to fill the grid.
+        # This draws circles to fill the grid. For testing purposes.
         circle = False
         if circle == True:
             for xy in self.grid:
