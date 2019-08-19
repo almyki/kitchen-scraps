@@ -5,7 +5,7 @@ import pygame
 class Background():
     """Create the background and screen."""
     def __init__(self, bg_filename):
-        self.bg_srf = pygame.image.load(bg_filename)
+        self.bg_srf = pygame.image.load('images/' + bg_filename + '.png')
         self.rect = self.bg_srf.get_rect()
         self.screen = pygame.display.set_mode((self.rect[2], self.rect[3]))
 
