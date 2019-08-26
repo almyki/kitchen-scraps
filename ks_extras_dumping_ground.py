@@ -50,6 +50,7 @@ class Settings():
         # TODO When changing to new level and new foods, must ensure food sizes aren't thrown off-sync.
         print('Halve the sizes of: screen, images, coordinates, fonts.')
 
+if self.
 
 
 

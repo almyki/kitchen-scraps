@@ -5,6 +5,7 @@ import pygame
 class Background():
     """Create the background and screen."""
     def __init__(self, bg_filename):
+        self.name = bg_filename
         self.bg_srf = pygame.image.load('images/' + bg_filename + '.png')
         self.rect = self.bg_srf.get_rect()
         self.screen = pygame.display.set_mode((self.rect[2], self.rect[3]))
@@ -17,14 +18,14 @@ class Background():
 
     def refresh_screen(self):
         """Refresh the screen with fill, blit, flip."""
-        self.fill_color = (255,0,0)
+        self.fill_color = (255, 0, 0)
         self.screen.fill(self.fill_color)
         self.screen.blit(self.bg_srf, self.rect)
 
 
 class Grid():
     """Create grid coordinates in which to place objects."""
-    def __init__(self, rows, columns, cell_size=(40,40), origin=(0,0), grid_name='no_name',):
+    def __init__(self, rows, columns, cell_size=(40, 40), origin=(0, 0), grid_name='no_name'):
         """Construct a grid's name, rows, columns, origin point, and cell size."""
         self.grid_name = grid_name
         self.rows = rows
@@ -52,10 +53,18 @@ class Grid():
             xy[1] += self.cell_size[1]
         return grid
 
-    def double_size(self, img_srf):
+    def double_size(self):
         """Double the background image and screen size."""
-        img_srf = pygame.transform.scale2x(img_srf)
-        img_srf.rect = img_srf.get_rect()
+        self.cell_size = (self.cell_size[0]*2, self.cell_size[1]*2)
+        self.origin = (self.origin[0]*2, self.origin[1]*2)
+        double_grid = []
+        for coord in self.grid:
+            double_grid.append((coord[0]*2, coord[1]*2))
+        self.grid = double_grid
+        self.empty_cells = self.grid[:]
+        self.rect = pygame.Rect(self.origin, (self.grid[-1][0] - self.origin[0], self.grid[-1][1] - self.origin[1]))
+        #img_srf = pygame.transform.scale2x(img_srf)
+        #img_srf.rect = img_srf.get_rect()
 
     def fill_grid(self, screen, filler_items):
         """Fill the grid with image surfaces from a list of items."""
