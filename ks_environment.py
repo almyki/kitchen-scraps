@@ -8,6 +8,7 @@ class Background():
         self.name = bg_filename
         self.bg_srf = pygame.image.load('images/' + bg_filename + '.png')
         self.rect = self.bg_srf.get_rect()
+        self.dimensions = (self.rect[2], self.rect[3])
         self.screen = pygame.display.set_mode((self.rect[2], self.rect[3]))
 
     def double_screen_size(self):
@@ -21,6 +22,14 @@ class Background():
         self.fill_color = (255, 0, 0)
         self.screen.fill(self.fill_color)
         self.screen.blit(self.bg_srf, self.rect)
+
+    def darken_screen(self):
+        """Fill the screen with a transparent dark color."""
+        dark_screen = pygame.Surface(self.dimensions)
+        dark_screen.set_alpha(200)
+        dark_screen.fill((0, 0, 0))
+        self.screen.blit(dark_screen, (0,0))
+
 
 
 class Grid():

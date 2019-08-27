@@ -8,12 +8,6 @@ from PIL import Image
 from ks_library import *
 utilities = Utilities()
 
-#self.topleft_pos = self.rect.topleft[:]
-#self.rect.topleft = (self.topleft_pos[0] * 2, self.topleft_pos[1] * 2)
-#self.topleft_pos = self.rect.topleft[:]
-#self.rect.topleft = (self.topleft_pos[0] * 2, self.topleft_pos[1] * 2)
-
-
 class GameImage():
     """Create image surfaces of frames, boxes, display surfaces, et cetera without interaction options."""
 
@@ -22,22 +16,13 @@ class GameImage():
         self.name = name
         self.filename = utilities.convert_to_codehappy_string(name)
         self.img_srf = pygame.image.load('images/' + self.filename + '.png')
-        self.act_srf = pygame.image.load('images/' + self.filename + '.png')
+        self.def_srf = pygame.image.load('images/' + self.filename + '.png')
         gry_srf = Image.open('images/'+ self.filename + '.png').convert('LA')
         gry_srf.save('images/gry_' + self.filename + '.png')
         self.gry_srf = pygame.image.load('images/gry_' + self.filename + '.png')
-        self.img_srfs = [self.act_srf, self.gry_srf]
+        self.img_srfs = [self.def_srf, self.gry_srf]
         self.rect = self.img_srf.get_rect()
         self.bg = bg
-
-    # def double_size(self):
-    #     """Double the size of the icons."""
-    #     self.double_srfs = []
-    #         pygame.transform.scale2x(the_img_srf)
-    #     print(self.img_srfs)
-    #         #self.double_srfs.append(pygame.transform.scale2x(img_srf))
-    #     #self.img_srf = self.double_srfs[0]
-    #     self.rect = self.img_srf.get_rect()
 
     def place_image(self, xy, xy_placement='topleft'):
         """Move the location of the button surface and rect."""
@@ -75,18 +60,6 @@ class Button(GameImage):
         self.hvr_srf = pygame.image.load('images/hvr_' + self.filename + '.png')
         self.img_srfs.append(self.hvr_srf)
 
-    def double_size(self, img_srf=''):
-        """Double the size of the icons."""
-        self.double_srfs = []
-        if not img_srf:
-            img_srf = self.img_srf
-
-        for img_srf in self.img_srfs:
-            self.double_srfs.append(pygame.transform.scale2x(img_srf))
-        self.img_srf = self.double_srfs[0]
-        self.hvr_srf = self.double_srfs[1]
-        self.rect = self.img_srf.get_rect()
-
     def refresh_img(self):
         """Draw the food item onto the screen."""
         mouse_xy = pygame.mouse.get_pos()
@@ -106,7 +79,6 @@ class Button(GameImage):
 
     def deactivate_button(self):
         self.gry_srf = pygame.image.load('images/gry_' + self.filename + '.png')
-
 
 
 class Food(Button):
