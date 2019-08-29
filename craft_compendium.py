@@ -22,6 +22,14 @@ class CraftCompendium():
             materials.sort()
         return formulas
 
+    def get_formula_products(self, req_product):
+        """Return a list of all the products created within a full formula."""
+        products = [req_product]
+        full_formula = self.get_product_full_formula(req_product)
+        for product in full_formula.keys():
+            products.append(product)
+        return products
+
     def get_all_materials(self, formulas, dupes=False):
         """Get a sorted list of all materials from a dictionary of formulas, with no duplicate materials."""
         all_materials = []
