@@ -17,11 +17,15 @@ ks = Settings('ks_bg')
 
 # Set up the game and level.
 pygame.init()
+pygame.mixer.music.load('sounds/' + ks.music + '.mp3')
+pygame.mixer.music.set_volume(0.3)
+pygame.mixer.music.play(-1)
+
 ks.set_level()
 while True:
     ks.refresh_screen()
     # TODO Show Level Prompt Card.
-    
+
     # Detect user events. If mouse-click, return the clicked element and act on it.
     clicked_button = ks.check_buttons()
     # If button is food item, switch grid if possible.
@@ -36,14 +40,17 @@ while True:
         elif clicked_button == ks.big_box and ks.big_box.active:
             # If Result is Success, show result food in Result Box and wait for another input.
             if ks.big_box.success:
+                ks.sfx_click.play()
                 ks.big_box.fill_big_box(ks.big_box.result)
                 ks.buttons.append(ks.big_box.result)
             # If Result is Failure, return food to pantry.
             else:
+                ks.sfx_denied.play()
                 for material in ks.mixing_grid.grid.values():
                     ks.switch_grid(material)
                 for button in ks.buttons:
                     button.active = True
+                ks.big_box.result = ''
             ks.big_box.active = False
         # If Result Product is displayed, wait for user input before continuing the game.
         elif clicked_button == ks.big_box.result:
@@ -53,7 +60,8 @@ while True:
             # TODO If player wins, show Win Card and wait for input. Level up and reset screen when user proceeds.
             elif clicked_button.name == ks.current_goal:
                 ks.level += 1
-                ks.set_level()
+                if ks.level < len(ks.goals):
+                    ks.set_level()
             else:
                 print('Hey, congrats, you win! I don\'t have any more levels yet. Thanks for playing =3= !')
     pygame.display.flip()

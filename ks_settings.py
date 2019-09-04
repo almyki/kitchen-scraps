@@ -4,6 +4,7 @@ import sys
 from ks_environment import Background, Grid, ActiveImage, Button, ResultBox, DetectEvents
 from craft_compendium import CraftCompendium
 
+
 class Settings():
     """Set the values for all the settings of the game."""
     def __init__(self, bg):
@@ -14,6 +15,16 @@ class Settings():
         self.pantry = ActiveImage('pantry', self.bg, [60, 60])
         self.pantry_grid = Grid('pantry grid', 5, 5, origin=(self.pantry.origin[0] + 4, self.pantry.origin[1] + 6))
         self.mixing_grid = Grid('mixing boxes', 1, 3, origin=(276, 65))
+
+        # Sound and Music
+        pygame.mixer.init()
+        self.music = 'music_lobby-time-by-kevin-macleod'
+        self.sfx_click = pygame.mixer.Sound('sounds/sfx_coin_collect.wav')
+        self.sfx_denied = pygame.mixer.Sound('sounds/sfx_denied.wav')
+        self.sfx_failure = pygame.mixer.Sound('sounds/sfx_failure.wav')
+        self.sfx_success = pygame.mixer.Sound('sounds/sfx_success.wav')
+        self.sfx_win = pygame.mixer.Sound('sounds/sfx_win.wav')
+
         # Recipes attributes.
         self.recipe_book = {
                         'dough': ['wheat', 'egg', 'water'],
@@ -34,12 +45,16 @@ class Settings():
                         }
         self.recipe_compendium = CraftCompendium(self.recipe_book)
         self.goals = ('bread', 'salad', 'classic breakfast', 'three-course drinks', 'full-course meal')
-        # Screen elements attributes (boxes, buttons).
-        self.boxes = []
+        # Mixing Boxes and Result Box.
+        self.box_1, self.box_2, self.box_3 = '', '', ''
+        self.boxes = [self.box_1, self.box_2, self.box_3]
+        z = 0
         for xy in self.mixing_grid.grid.keys():
-            self.boxes.append(ActiveImage('box_mix', self.bg, xy))
+            self.boxes[z] = (ActiveImage('box_mix_' + str((z+1)), self.bg, xy))
+            z += 1
         big_box_pos = (self.boxes[1].rect.centerx, self.boxes[1].rect.centery + 130)
         self.big_box = ResultBox('box_correct', self.bg, big_box_pos)
+
         # Mix Button
         self.mix_button = Button('mix', self.bg)
         self.mix_button.rect[3] -= 15
@@ -52,7 +67,7 @@ class Settings():
         Set the goal food for the level, then derive the full formula from it.
         Set the raw ingredients into the pantry.
         Rebuild the images list to be blit to the screen, including the level's food buttons."""
-        self.bg.darken = False
+        self.sfx_win.play()
         self.big_box.active = False
         self.big_box.success = False
         self.big_box.result = ''
@@ -82,7 +97,7 @@ class Settings():
         """Change the mix button and mix boxes to gray or white depending on if they are active."""
         z = 0
         for coord, cell in self.mixing_grid.grid.items():
-            if cell:
+            if cell and self.big_box.active == False and self.big_box.result == '':
                 self.boxes[z].active = True
             else:
                 self.boxes[z].active = False
@@ -129,11 +144,14 @@ class Settings():
                 switched = True
                 break
         if switched:
+            if self.big_box.active == False:
+                self.sfx_click.play()
             for coord, cell in current_grid.items():
                 if filler == cell:
                     current_grid[coord] = ''
                     break
         else:
+            self.sfx_denied.play()
             print('failure to switch.')
 
     def confirm_result_and_cont(self):
@@ -159,9 +177,11 @@ class Settings():
         for product, materials in self.current_full_formula.items():
             if mixing_foods == materials:
                 ## Add resulting product to current foods, but not buttons (yet). Turn on Result Box. Return product.
+                self.sfx_success.play()
                 self.big_box.success = True
                 result = Button(product, self.bg)
                 return result
+        self.sfx_failure.play()
         self.big_box.success = False
 
     def erase_mix_materials(self):

@@ -15,7 +15,6 @@ class Background():
         self.dim = (self.rect[2], self.rect[3])
         self.screen = pygame.display.set_mode(self.dim)
         # Dark Mode settings
-        self.darken = False
         self.dark_screen = pygame.Surface(self.dim)
         self.dark_screen.set_alpha(100)
         self.dark_screen.fill((0, 0, 0))
@@ -163,7 +162,6 @@ class ResultBox(Button):
         self.result.place_image(self.rect.center, 'center')
 
     def disable_all_except_self(self, buttons_to_disable):
-        self.bg.darken = True
         self.active = True
         for button in buttons_to_disable:
             if button is not self:
