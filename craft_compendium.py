@@ -1,4 +1,25 @@
 
+
+import PIL
+import os
+
+for filename in os.listdir('images/'):
+    if 'gry_' in filename:
+        original = 'images/' + filename
+        filename = filename.replace('gry_', '')
+        filanem = filename.replace('.png', '_gry.png')
+        revised = 'images/' + filename
+        os.rename(original, revised)
+    if 'hvr_' in filename:
+        print(filename)
+        original = 'images/' + filename
+        print(original)
+        filename = filename.replace('hvr_', '')
+        filename = filename.replace('.png', '_hvr.png')
+        revised = 'images/' + filename
+        print(filename)
+        os.rename(original, revised)
+
 # The class 'CraftCompendium' can be used for any crafting system.
 # TODO Add ability to sort by category and tags.
 
@@ -21,6 +42,14 @@ class CraftCompendium():
         for materials in formulas.values():
             materials.sort()
         return formulas
+
+    def get_formula_products(self, req_product):
+        """Return a list of all the products created within a full formula."""
+        products = [req_product]
+        full_formula = self.get_product_full_formula(req_product)
+        for product in full_formula.keys():
+            products.append(product)
+        return products
 
     def get_all_materials(self, formulas, dupes=False):
         """Get a sorted list of all materials from a dictionary of formulas, with no duplicate materials."""

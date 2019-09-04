@@ -1,53 +1,64 @@
 
-# HIGHLIGHT + CTRL + ALT + C = Show dropdown of wrapping options like 'if', 'while'.
+#### Main module for the game Kitchen Scraps.
 
 import sys
 import pygame
-from ks_library import *
+from PIL import Image
+from ks_environment import Background, Grid, ActiveImage, Button, DetectEvents
 from ks_settings import Settings
-from ks_buttons import GameImage, Frame, Button, Food
+from craft_compendium import CraftCompendium
 
-# TODO Put 'check mix success' and 'detect events' into a class.
-#  Detect win condition, show win screen, then wait for input to go to next level.
-# Test all 5 levels. Solve the category type problem.
-# Create robust messages system, and utility buttons, to cover for multiple situations as placeholders until replaced.
-
+# TODO change box to ? after starting new combo.
+#  change to check after mixing, then change to ingredient after click.
+#  change so the grid fills empty spot even after new level et cetera.
 
 
+ks = Settings('ks_bg')
 
-
-
-
-
-
-
-
-
-
-####    ####    ####    ####
-
+# Set up the game and level.
 pygame.init()
+ks.set_level()
+while True:
+    ks.refresh_screen()
+    # TODO Show Level Prompt Card.
+    
+    # Detect user events. If mouse-click, return the clicked element and act on it.
+    clicked_button = ks.check_buttons()
+    # If button is food item, switch grid if possible.
+    if clicked_button:
+        if clicked_button.name in ks.current_foods and clicked_button.active:
+            ks.switch_grid(clicked_button)
+        # If button is 'Mix' and 'Mix' is active, try the mix. Activate and return O/X for Result Box.
+        elif clicked_button == ks.mix_button and ks.mix_button.active:
+            ks.big_box.result = ks.mix_ingredients()
+            ks.big_box.disable_all_except_self(ks.buttons)
+        # If Result Box is active, proceed on user input based on success or failure.
+        elif clicked_button == ks.big_box and ks.big_box.active:
+            # If Result is Success, show result food in Result Box and wait for another input.
+            if ks.big_box.success:
+                ks.big_box.fill_big_box(ks.big_box.result)
+                ks.buttons.append(ks.big_box.result)
+            # If Result is Failure, return food to pantry.
+            else:
+                for material in ks.mixing_grid.grid.values():
+                    ks.switch_grid(material)
+                for button in ks.buttons:
+                    button.active = True
+            ks.big_box.active = False
+        # If Result Product is displayed, wait for user input before continuing the game.
+        elif clicked_button == ks.big_box.result:
+            ks.erase_mix_materials()
+            if clicked_button.name != ks.current_goal:
+                ks.confirm_result_and_cont()
+            # TODO If player wins, show Win Card and wait for input. Level up and reset screen when user proceeds.
+            elif clicked_button.name == ks.current_goal:
+                ks.level += 1
+                ks.set_level()
+            else:
+                print('Hey, congrats, you win! I don\'t have any more levels yet. Thanks for playing =3= !')
+    pygame.display.flip()
 
 
 
-ks = Settings('ks_bg', ks_recipe_book)
 
-
-
-def run_kitchen_scraps():
-    """Run the main loop for the game Kitchen Scraps."""
-    current_level = 0
-    win = False
-    ks.setup_new_level(current_level)
-    while win == False:
-        detect_events(ks.current_foods)
-        ks.refresh_screen()
-
-        pygame.display.flip()
-        if len(ks.current_foods) == 1:
-            current_level += 1
-            ks.setup_new_level(current_level)
-
-
-
-run_kitchen_scraps()
+####

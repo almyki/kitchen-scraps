@@ -1,40 +1,38 @@
 
-#### Holds classes to set up Kitchen Scraps' Background, Grids.
+# Background, Grid, ActiveImage, Button
+
 import pygame
+import sys
+from PIL import Image
 
 class Background():
-    """Create the background and screen."""
-    def __init__(self, bg_filename):
-        self.name = bg_filename
-        self.bg_srf = pygame.image.load('images/' + bg_filename + '.png')
-        self.rect = self.bg_srf.get_rect()
-        self.dimensions = (self.rect[2], self.rect[3])
-        self.screen = pygame.display.set_mode((self.rect[2], self.rect[3]))
-
-    def double_screen_size(self):
-        """Double the background image and screen size."""
-        self.bg_srf = pygame.transform.scale2x(self.bg_srf)
-        self.rect = self.bg_srf.get_rect()
-        self.screen = pygame.display.set_mode((self.rect[2], self.rect[3]))
+    """Create all the background"""
+    def __init__(self, name):
+        self.name = name
+        self.filename = 'images/' + name + '.png'
+        self.img_srf = pygame.image.load(self.filename)
+        self.rect = self.img_srf.get_rect()
+        self.dim = (self.rect[2], self.rect[3])
+        self.screen = pygame.display.set_mode(self.dim)
+        # Dark Mode settings
+        self.darken = False
+        self.dark_screen = pygame.Surface(self.dim)
+        self.dark_screen.set_alpha(100)
+        self.dark_screen.fill((0, 0, 0))
 
     def refresh_screen(self):
         """Refresh the screen with fill, blit, flip."""
         self.fill_color = (255, 0, 0)
         self.screen.fill(self.fill_color)
-        self.screen.blit(self.bg_srf, self.rect)
+        self.screen.blit(self.img_srf, self.rect)
 
     def darken_screen(self):
-        """Fill the screen with a transparent dark color."""
-        dark_screen = pygame.Surface(self.dimensions)
-        dark_screen.set_alpha(200)
-        dark_screen.fill((0, 0, 0))
-        self.screen.blit(dark_screen, (0,0))
-
+        self.screen.blit(self.dark_screen, (0, 0))
 
 
 class Grid():
     """Create grid coordinates in which to place objects."""
-    def __init__(self, rows, columns, cell_size=(40, 40), origin=(0, 0), grid_name='no_name'):
+    def __init__(self, grid_name, rows, columns, cell_size=(40, 40), origin=(0, 0)):
         """Construct a grid's name, rows, columns, origin point, and cell size."""
         self.grid_name = grid_name
         self.rows = rows
@@ -42,49 +40,198 @@ class Grid():
         self.cell_size = cell_size
         self.origin = origin
         self.grid = self.make_grid()
-        self.empty_cells = self.grid[:]
-        self.rect = pygame.Rect(self.origin, (self.grid[-1][0] - self.origin[0], self.grid[-1][1] - self.origin[1]))
-
-    def check_object_data(self):
-        print(f'Name: {self.grid_name}')
 
     def make_grid(self):
-        grid = []
+        """Make a list of xy coordinates based on the rows, columns, cell size, and origin point of the class."""
+        grid = {}
         xy = [self.origin[0], self.origin[1]]
         for row in range(0, self.rows):
             for column in range(0, self.columns):
-                this_xy = xy[:]
-                grid.append(this_xy)
-                # Move coordinates to right by one cell width.
+                xy_key = (xy[0], xy[1])
+                grid[xy_key] = ''
                 xy[0] += self.cell_size[0]
-            # Star new row. Move down by one cell height, reset x to origin.
             xy[0] = self.origin[0]
             xy[1] += self.cell_size[1]
         return grid
 
-    def double_size(self):
-        """Double the background image and screen size."""
-        self.cell_size = (self.cell_size[0]*2, self.cell_size[1]*2)
-        self.origin = (self.origin[0]*2, self.origin[1]*2)
-        double_grid = []
-        for coord in self.grid:
-            double_grid.append((coord[0]*2, coord[1]*2))
-        self.grid = double_grid
-        self.empty_cells = self.grid[:]
-        self.rect = pygame.Rect(self.origin, (self.grid[-1][0] - self.origin[0], self.grid[-1][1] - self.origin[1]))
-        #img_srf = pygame.transform.scale2x(img_srf)
-        #img_srf.rect = img_srf.get_rect()
+    def fill_empty_cell(self, filler):
+        """Modify the location of an object's rectangle and add its name to the grid's dict data."""
+        for coord, cell in self.grid.items():
+            if cell == '':
+                filler.rect.topleft = coord
+                self.grid[coord] = filler
+                break
 
-    def fill_grid(self, screen, filler_items):
-        """Fill the grid with image surfaces from a list of items."""
-        for filler_item in filler_items:
-            filler_item.fill_empty_cell(self.empty_cells)
-            screen.blit(filler_item.img_srf, filler_item.rect)
 
-        # This draws circles to fill the grid. For testing purposes.
-        circle = False
-        if circle == True:
-            for xy in self.grid:
-                cell_center = (int(xy[0] + (self.cell_size[0] / 2)), int(xy[1] + (self.cell_size[1] / 2)))
-                circle_radius = int(self.cell_size[0] / 2)
-                pygame.draw.circle(screen, (200,0,0), cell_center, circle_radius)
+class ActiveImage():
+    """Creates an image Surface with some form of active feedback, like changing position, color, or state."""
+    def __init__(self, name, bg, origin=(0, 0)):
+        self.name = name
+        self.bg = bg
+        self.filename = self.convert_to_codehappy_string(name)
+        self.img_srf = pygame.image.load('images/' + self.filename + '.png')
+        self.def_srf = pygame.image.load('images/' + self.filename + '.png')
+        gry_srf = Image.open('images/' + self.filename + '.png').convert('LA')
+        gry_srf.save('images/' + self.filename + '_gry.png')
+        self.gry_srf = pygame.image.load('images/' + self.filename + '_gry.png')
+        self.rect = self.img_srf.get_rect()
+        self.origin = origin
+        self.rect.move_ip(origin)
+        self.active = True
+
+    def convert_to_codehappy_string(self, string):
+        codehappy_string = ''
+        for character in string:
+            if character == ' ':
+                codehappy_string += '_'
+            else:
+                codehappy_string += character
+        return codehappy_string
+
+    def place_image(self, xy, origin_pos='topleft'):
+        """Move the location of the button surface and rect."""
+        if origin_pos == 'topleft':
+            self.rect.topleft = xy
+        elif origin_pos == 'center':
+            self.rect.center = xy
+        self.origin = xy
+
+    def refresh_img(self):
+        """Draw the item onto the screen."""
+        if self.active:
+            self.bg.screen.blit(self.img_srf, self.rect)
+        else:
+            self.bg.screen.blit(self.gry_srf, self.rect)
+
+
+class Button(ActiveImage):
+    """"""
+    def __init__(self, name, bg, origin=(0, 0)):
+        """Initialize the parent attributes and Button-specific attributes."""
+        super().__init__(name, bg, origin)
+        self.hvr_srf = pygame.image.load('images/' + self.filename + '_hvr.png')
+
+    def check_collide(self, mouse_xy):
+        """Check if mouse click collides with self."""
+        if self.active:
+            if self.rect.collidepoint(mouse_xy):
+                self.img_srf = self.hvr_srf
+                return True
+            else:
+                self.img_srf = self.def_srf
+                return False
+        else:
+            self.img_srf = self.gry_srf
+
+    def refresh_img(self):
+        """Draw the item onto the screen."""
+        if self.active:
+            mouse_xy = pygame.mouse.get_pos()
+            if self.rect.collidepoint(mouse_xy):
+                self.img_srf = self.hvr_srf
+            else:
+                self.img_srf = self.def_srf
+            self.bg.screen.blit(self.img_srf, self.rect)
+        else:
+            self.bg.screen.blit(self.gry_srf, self.rect)
+
+
+class ResultBox(Button):
+    """The big box that displays the result of a mix."""
+
+    def __init__(self, name, bg, origin=(0, 0)):
+        """Initialize ResultBox attributes."""
+        super().__init__(name, bg, origin)
+        self.name = 'box_correct'
+        self.wht_srf = pygame.image.load('images/box_blank.png')
+        self.q_srf = pygame.image.load('images/box_questionmark.png')
+        self.x_srf = pygame.image.load('images/box_wrong.png')
+        self.x_hvr = pygame.image.load('images/box_wrong_hvr.png')
+        self.c_srf = pygame.image.load('images/box_correct.png')
+        self.c_hvr = pygame.image.load('images/box_correct_hvr.png')
+        self.active = False
+        self.success = False
+        self.rect.center = origin
+        self.result = ''
+
+    def fill_big_box(self, product):
+        self.active = False
+        self.result = product
+        self.result.def_srf = pygame.transform.scale2x(product.def_srf)
+        self.result.hvr_srf = pygame.transform.scale2x(product.hvr_srf)
+        self.result.rect = self.result.def_srf.get_rect()
+        self.result.place_image(self.rect.center, 'center')
+
+    def disable_all_except_self(self, buttons_to_disable):
+        self.bg.darken = True
+        self.active = True
+        for button in buttons_to_disable:
+            if button is not self:
+                button.active = False
+        if self.result:
+            self.result.active = True
+
+    def refresh_img(self):
+        """Draw the item onto the screen."""
+        mouse_xy = pygame.mouse.get_pos()
+        if self.active:
+            if self.success:
+                if self.rect.collidepoint(mouse_xy):
+                    self.img_srf = self.c_srf
+                else:
+                    self.img_srf = self.c_hvr
+            else:
+                if self.rect.collidepoint(mouse_xy):
+                    self.img_srf = self.x_srf
+                else:
+                    self.img_srf = self.x_hvr
+            self.bg.darken_screen()
+            self.bg.screen.blit(self.img_srf, self.rect)
+        else:
+            if self.success:
+                self.img_srf = self.wht_srf
+                self.bg.darken_screen()
+                self.bg.screen.blit(self.img_srf, self.rect)
+                self.result.refresh_img()
+            else:
+                self.img_srf = self.q_srf
+                self.bg.screen.blit(self.img_srf, self.rect)
+
+
+class DetectEvents():
+    """Detect any inputs or interactions and respond."""
+    def __init__(self, clickables=''):
+        """Initialize attributes for Detect Events."""
+        self.clickables = clickables
+
+    def detect_events(self):
+        """Loop through all user input events. Exit if user quits. Return any clicked button."""
+        for button in self.clickables:
+            button.check_collide()
+        for event in pygame.event.get():
+            self.detect_quit(event)
+            mouse_xy = self.get_click_xy(event)
+            if mouse_xy:
+                button = self.detect_button_collide()
+                return button
+
+    def detect_quit(self, event):
+        """Close the game if player exits out."""
+        if event.type == pygame.QUIT:
+            sys.exit()
+
+    def get_click_xy(self, event):
+        """Return the xy coordinates for any mouse clicks."""
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_xy = pygame.mouse.get_pos()
+            return mouse_xy
+        else:
+            return
+
+    def detect_button_collide(self):
+        """Check through all clickable buttons to see if the mouse pos collides with any of them."""
+        for button in self.clickables:
+            clicked_button = button.check_collide()
+            if clicked_button:
+                print('clicked: ' + button.name)
+                return button

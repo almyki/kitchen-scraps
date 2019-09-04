@@ -1,188 +1,172 @@
 
 import pygame
-from ks_library import *
-from ks_environment import Background, Grid
-from ks_buttons import GameImage, Frame, Button, Food
+import sys
+from ks_environment import Background, Grid, ActiveImage, Button, ResultBox, DetectEvents
 from craft_compendium import CraftCompendium
 
-
-
-
 class Settings():
-    """Define all the settings for the game Kitchen Scraps."""
-    def __init__(self, bg_filename, recipe_book):
-        """Initialize attributes for Settings."""
-        self.bg = Background(bg_filename)
-        self.caption = pygame.display.set_caption('Kitchen Scraps - Cleanup Attempt 2, now with PyCharm!')
-        self.level_goals = ('bread', 'salad', 'classic breakfast', 'three-course drinks', 'full-course meal')
-        self.recipe_book = CraftCompendium(recipe_book)
+    """Set the values for all the settings of the game."""
+    def __init__(self, bg):
+        """Initiate attributes for Settings."""
+        # Background images and grid attributes.
+        self.level = 0
+        self.bg = Background(bg)
+        self.pantry = ActiveImage('pantry', self.bg, [60, 60])
+        self.pantry_grid = Grid('pantry grid', 5, 5, origin=(self.pantry.origin[0] + 4, self.pantry.origin[1] + 6))
+        self.mixing_grid = Grid('mixing boxes', 1, 3, origin=(276, 65))
+        # Recipes attributes.
+        self.recipe_book = {
+                        'dough': ['wheat', 'egg', 'water'],
+                        'bread': [ 'dough', 'salt', 'yeast' ],
+                        'dressing': ['vinegar', 'oil', 'herbs'],
+                        'salad': [ 'lettuce', 'carrot', 'dressing' ],
+                        'eggs and bacon': ['egg', 'red meat', 'oil'],
+                        'orange juice': ['orange', 'orange', 'orange'],
+                        'classic breakfast': [ 'orange juice', 'eggs and bacon', 'apple' ],
+                        'fruit juice': ['apple', 'orange', 'water'],
+                        'vegetable juice': ['carrot', 'lettuce', 'water'],
+                        'soymilk': ['soybean', 'nuts', 'water'],
+                        'three-course drinks': [ 'fruit juice', 'vegetable juice', 'soymilk' ],
+                        'mayonnaise': ['egg', 'vinegar', 'oil'],
+                        'egg sandwich': ['bread', 'egg', 'mayonnaise'],
+                        'ice cream': ['cream', 'sugar', 'ice'],
+                        'full-course meal': [ 'salad', 'egg sandwich', 'ice cream' ],
+                        }
+        self.recipe_compendium = CraftCompendium(self.recipe_book)
+        self.goals = ('bread', 'salad', 'classic breakfast', 'three-course drinks', 'full-course meal')
+        # Screen elements attributes (boxes, buttons).
+        self.boxes = []
+        for xy in self.mixing_grid.grid.keys():
+            self.boxes.append(ActiveImage('box_mix', self.bg, xy))
+        big_box_pos = (self.boxes[1].rect.centerx, self.boxes[1].rect.centery + 130)
+        self.big_box = ResultBox('box_correct', self.bg, big_box_pos)
+        # Mix Button
         self.mix_button = Button('mix', self.bg)
-        self.mix_button.def_srf = self.mix_button.img_srf
-        self.mix_button_pos = self.mix_button.place_image((270, 50))
+        self.mix_button.rect[3] -= 15
+        mix_button_pos = (self.boxes[1].rect.centerx, self.boxes[1].rect.centery + 50)
+        self.mix_button.place_image(mix_button_pos, 'center')
 
-        self.pantry = Frame('pantry', self.bg, (58, 60))
-        self.pantry_spot = (self.pantry.rect[0] + 6, self.pantry.rect[1] + 6)
-        self.pantry_grid = Grid(5, 5, cell_size=(38, 38), origin=(self.pantry_spot), grid_name='pantry grid')
 
-        self.mixing_grid = Grid(1, 3, origin=(270, 130), grid_name='mixing grid')
-        self.mixboxes = []
-        for index in range(0, len(self.mixing_grid.grid)):
-            self.mixboxes.append(Frame('box_mix', self.bg, self.mixing_grid.grid[index]))
-
-        self.result_box = Frame('box_questionmark', self.bg)
-        result_box_center = (self.mixboxes[1].rect.centerx, self.mixboxes[1].rect.centery + self.result_box.rect[2]*0.8)
-        self.result_box.place_image(result_box_center, 'center')
-        self.result_box.q_srf = pygame.image.load('images/box_questionmark.png')
-        self.result_box.x_srf = pygame.image.load('images/box_wrong.png')
-        self.result_box.c_srf = pygame.image.load('images/box_correct.png')
-        self.result_box.b_srf = pygame.image.load('images/box_blank.png')
-        self.result_boxes = (self.result_box.q_srf, self.result_box.x_srf, self.result_box.c_srf)
-
-    def setup_new_level(self, level_num):
-        """Set the new level's items and images."""
-        # Current Level
-        self.current_goal = self.level_goals[level_num]
-        self.current_full_formula = self.recipe_book.get_product_full_formula(self.current_goal)
-        print(self.current_full_formula)
-        self.current_all_materials = self.recipe_book.get_all_materials(self.current_full_formula, dupes=True)
-        self.current_raw_ingredients = self.recipe_book.get_raw_materials(self.current_full_formula, dupes=True)
-        self.current_foods = []
-        for food in self.current_raw_ingredients:
-            self.current_foods.append(Food(food, self.bg, self.pantry_grid))
-        self.pantry_grid.fill_grid(self.bg.screen, self.current_foods)
+    def set_level(self):
+        """Reset the button list with the mix button plus all food buttons.
+        Set the goal food for the level, then derive the full formula from it.
+        Set the raw ingredients into the pantry.
+        Rebuild the images list to be blit to the screen, including the level's food buttons."""
+        self.bg.darken = False
+        self.big_box.active = False
+        self.big_box.success = False
+        self.big_box.result = ''
+        self.buttons = [self.mix_button, self.big_box]
+        self.current_goal = self.goals[self.level]
+        self.current_full_formula = self.recipe_compendium.get_product_full_formula(self.current_goal)
+        self.current_foods = self.recipe_compendium.get_raw_materials(self.current_full_formula, dupes=True)
+        for food in self.current_foods:
+            self.buttons.append(Button(food, self.bg))
+            self.pantry_grid.fill_empty_cell(self.buttons[-1])
+        self.events = DetectEvents(self.buttons)
+        self.refresh_screen()
+        pygame.display.flip()
 
     def refresh_screen(self):
-        """Refresh all images on screen."""
-        self.set_state()
+        """Refresh all elements onto the screen."""
+        self.check_active_states()
         self.bg.refresh_screen()
         self.pantry.refresh_img()
+        for box in self.boxes:
+            box.refresh_img()
+        for button in self.buttons:
+            button.refresh_img()
+        self.big_box.refresh_img()
+
+    def check_active_states(self):
+        """Change the mix button and mix boxes to gray or white depending on if they are active."""
         z = 0
-        for xy in self.mixing_grid.grid:
-        #    if xy not in self.mixing_grid.empty_cells:
-        #       self.mixboxes[z].img_srf = self.mixboxes[z].def_srf
-        #    else:
-        #       self.mixboxes[z].img_srf = self.mixboxes[z].gry_srf
-            self.mixboxes[z].refresh_img()
+        for coord, cell in self.mixing_grid.grid.items():
+            if cell:
+                self.boxes[z].active = True
+            else:
+                self.boxes[z].active = False
             z += 1
-        mixed = True
-        #if len(self.mixing_grid.empty_cells) > 0:
-        #self.bg.screen.blit(self.mix_button.img_srf, self.mix_button.rect)
-
-        if self.mixing_grid.empty_cells:
-            self.mix_button.img_srf = self.mix_button.gry_srf
-            self.bg.screen.blit(self.mix_button.img_srf, self.mix_button.rect)
+        if '' in self.mixing_grid.grid.values() or self.big_box.active or self.big_box.success:
+            self.mix_button.active = False
         else:
-            self.mix_button.img_srf = self.mix_button.def_srf
-            self.mix_button.refresh_img()
-        for food in self.current_foods:
-            food.refresh_img()
+            self.mix_button.active = True
 
-
-    def
-        successful_mix = False
-        if successful_mix:
-            self.bg.darken_screen()
-            self.result_box.refresh_img()
-            self.apple_win.refresh_img()
-        else:
-            self.result_box.refresh_img()
-            self.apple_win = self.display_item('apple')
-
-    def check_mix_success(self):
-        """If it's a successful recipe, combine into new food. If not, return items to shelf.
-        Create a list of the active foods, then make a copy of the food name strings,
-        then sort the copy to compare with the recipes.
-        """
-        mixed = self.mix_button.check_click()
-        if mixed:
-            active_foods = []
-            for food in self.current_foods:
-                if food.grid == self.mixing_grid:
-                    active_foods.append(food.name)
-            active_foods = sorted(active_foods)
-            for product, materials in self.current_full_formula.items():
-                if active_foods == materials:
-                    return product
-
-    def display_results(self):
-        """Show the successful mix if successful. Otherwise, return items to pantry."""
-        successful_mix = self.check_mix_success()
-        if successful_mix:
-            result = self.display_item(successful_mix)
-
-
-                self.current_foods.append(Food(product, self.bg, self.pantry_grid))
-
-
-                self.current_foods[-1].fill_empty_cell(self.pantry_grid.empty_cells)
-                while active_foods:
-                    self.current_foods.remove(active_foods[0])
-                    active_foods.remove(active_foods[0])
-                self.mixing_grid.empty_cells = self.mixing_grid.grid[:]
-        while active_foods:
-            active_foods[0].switch_grid(self.pantry_grid, self.mixing_grid)
-            active_foods.remove(active_foods[0])
-
-    def detect_events(icons):
-        """Detect mouse and button clicks, then have the game respond."""
+    def check_buttons(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
-                print(mouse_pos)
-                for icon in icons:
-                    clicked = icon.check_click()
-                    if clicked == True:
-                        icon.switch_grid(ks.pantry_grid, ks.mixing_grid)
-                if len(ks.mixing_grid.empty_cells) == 0:
-                    ks.mix_button.refresh_img()
-                    clicked = ks.mix_button.check_click()
-                    if clicked:
-                        check_mix_success()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_xy = pygame.mouse.get_pos()
+                for button in self.buttons:
+                    collide = button.check_collide(mouse_xy)
+                    if collide:
+                        return button
 
-    def display_item(self, item):
-        """Show the item in the center of the results box, double-sized."""
-        display_item = Button(item, self.bg)
-        display_item.img_srf = pygame.transform.scale2x(display_item.img_srf)
-        display_item.hvr_srf = pygame.transform.scale2x(display_item.hvr_srf)
-        display_item.rect = display_item.img_srf.get_rect()
-        display_item.rect.center = self.result_box.rect.center
-        self.bg.screen.blit(display_item, display_item.rect)
-        return display_item
+    def switch_grid(self, filler):
+        """Move an object from within this grid into another. Remove from this grid."""
+        switched = False
+        if filler in self.pantry_grid.grid.values():
+            current_grid = self.pantry_grid.grid
+            dest_grid = self.mixing_grid.grid
+        elif filler in self.mixing_grid.grid.values():
+            current_grid = self.mixing_grid.grid
+            dest_grid = self.pantry_grid.grid
+        elif filler.name == self.big_box.result.name:
+            for coord, cell in self.pantry_grid.grid.items():
+                if cell == '':
+                    filler.rect.topleft = coord
+                    self.pantry_grid.grid[coord] = filler
+                    return
+        else:
+            print('error: it\'s not in either grid.')
+            print(filler)
+            return
+        for coord, cell in dest_grid.items():
+            if cell == '':
+                filler.rect.topleft = coord
+                dest_grid[coord] = filler
+                switched = True
+                break
+        if switched:
+            for coord, cell in current_grid.items():
+                if filler == cell:
+                    current_grid[coord] = ''
+                    break
+        else:
+            print('failure to switch.')
 
-    def wait_for_result_click(self):
-        """Wait for the click on the result item, then transfer the result to the pantry and reenable the screen."""
-        clicked = display_item.check_click()
-        if clicked:
-            self.current_foods.append(Food(display_item.name, self.bg, self.pantry_grid))
-            # Wipe the display item.
+    def confirm_result_and_cont(self):
+        """Send the result product to the pantry, remove the mixed food, and reactivate screen elements."""
+        result_product = Button(self.big_box.result.name, self.bg)
+        self.switch_grid(result_product)
+        self.current_foods.append(result_product.name)
+        self.buttons.remove(self.big_box.result)
+        self.buttons.append(result_product)
+        for button in self.buttons:
+            button.active = True
+        self.big_box.success = False
+        self.big_box.active = False
+        self.big_box.result = ''
 
+    def mix_ingredients(self):
+        """Compare the ingredients in the mix boxes with the full formula. Return the mixed product if successful."""
+        mixing_foods = []
+        for food in self.mixing_grid.grid.values():
+            mixing_foods.append(food.name)
+        mixing_foods.sort()
+        # Check lvl full formula for matching recipe.
+        for product, materials in self.current_full_formula.items():
+            if mixing_foods == materials:
+                ## Add resulting product to current foods, but not buttons (yet). Turn on Result Box. Return product.
+                self.big_box.success = True
+                result = Button(product, self.bg)
+                return result
+        self.big_box.success = False
 
-    def set_state(self):
-        """Decide the state of various frames and such."""
-        z = 0
-        for xy in self.mixing_grid.grid:
-            if xy not in self.mixing_grid.empty_cells:
-                self.mixboxes[z].img_srf = self.mixboxes[z].def_srf
-            else:
-                self.mixboxes[z].img_srf = self.mixboxes[z].gry_srf
-            z += 1
-        # for box in self.mixboxes:
-        #     if box.rect.topleft in self.mixing_grid.empty_cells:
-        #         box.img_srf = box.gry_srf
-        #     else:
-        #         box.img_srf = box.gry_srf
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def erase_mix_materials(self):
+        """Remove the food in the mixing grid from current foods, buttons, and grid."""
+        for coord, button in self.mixing_grid.grid.items():
+            self.buttons.remove(button)
+            self.current_foods.remove(button.name)
+            self.mixing_grid.grid[coord] = ''
