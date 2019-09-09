@@ -1,52 +1,36 @@
 
 import pygame
 import sys
+import os
 from ks_environment import Background, Grid, ActiveImage, Button, ResultBox, DetectEvents
 from craft_compendium import CraftCompendium
+
+root = RootPaths()
+level - goal, full formula, materials, music, theme
 
 
 class Settings():
     """Set the values for all the settings of the game."""
-    def __init__(self, bg):
+    def __init__(self, ):
         """Initiate attributes for Settings."""
         # Background images and grid attributes.
         self.level = 0
-        self.bg = Background(bg)
+        self.bg = 'ks_bg.png'
+        self.pantry = 'pantry.png'
         self.pantry = ActiveImage('pantry', self.bg, [60, 60])
-        self.pantry_grid = Grid('pantry grid', 5, 5, origin=(self.pantry.origin[0] + 4, self.pantry.origin[1] + 6))
-        self.mixing_grid = Grid('mixing boxes', 1, 3, origin=(276, 65))
-
         # Sound and Music
         pygame.mixer.init()
+        self.volume = 0.3
         self.music = 'music_lobby-time-by-kevin-macleod'
-        self.sfx_click = pygame.mixer.Sound('sounds/sfx_coin_collect.wav')
-        self.sfx_denied = pygame.mixer.Sound('sounds/sfx_denied.wav')
-        self.sfx_failure = pygame.mixer.Sound('sounds/sfx_failure.wav')
-        self.sfx_success = pygame.mixer.Sound('sounds/sfx_success.wav')
-        self.sfx_win = pygame.mixer.Sound('sounds/sfx_win.wav')
-
-        # Recipes attributes.
-        self.recipe_book = {
-                        'dough': ['wheat', 'egg', 'water'],
-                        'bread': [ 'dough', 'salt', 'yeast' ],
-                        'dressing': ['vinegar', 'oil', 'herbs'],
-                        'salad': [ 'lettuce', 'carrot', 'dressing' ],
-                        'eggs and bacon': ['egg', 'red meat', 'oil'],
-                        'orange juice': ['orange', 'orange', 'orange'],
-                        'classic breakfast': [ 'orange juice', 'eggs and bacon', 'apple' ],
-                        'fruit juice': ['apple', 'orange', 'water'],
-                        'vegetable juice': ['carrot', 'lettuce', 'water'],
-                        'soymilk': ['soybean', 'nuts', 'water'],
-                        'three-course drinks': [ 'fruit juice', 'vegetable juice', 'soymilk' ],
-                        'mayonnaise': ['egg', 'vinegar', 'oil'],
-                        'egg sandwich': ['bread', 'egg', 'mayonnaise'],
-                        'ice cream': ['cream', 'sugar', 'ice'],
-                        'full-course meal': [ 'salad', 'egg sandwich', 'ice cream' ],
-                        }
-        self.recipe_compendium = CraftCompendium(self.recipe_book)
-        self.goals = ('bread', 'salad', 'classic breakfast', 'three-course drinks', 'full-course meal')
+        self.sfx_click = pygame.mixer.Sound(root.sounds + 'sfx_coin_collect.wav')
+        self.sfx_denied = pygame.mixer.Sound(root.sounds + 'sfx_denied.wav')
+        self.sfx_failure = pygame.mixer.Sound(root.sounds + 'sfx_failure.wav')
+        self.sfx_success = pygame.mixer.Sound(root.sounds + 'sfx_success.wav')
+        self.sfx_win = pygame.mixer.Sound(root.sounds + 'sfx_win.wav')
         # Mixing Boxes and Result Box.
-        self.box_1, self.box_2, self.box_3 = '', '', ''
+        self.box_1 = ActiveImage('box_mix_1', self.bg, list(self.mixing_grid.grid)[0])
+        self.box_2 = ActiveImage('box_mix_2', self.bg, list(self.mixing_grid.grid)[1])
+        self.box_3 = ActiveImage('box_mix_3', self.bg, list(self.mixing_grid.grid)[2])
         self.boxes = [self.box_1, self.box_2, self.box_3]
         z = 0
         for xy in self.mixing_grid.grid.keys():
@@ -56,11 +40,40 @@ class Settings():
         self.big_box = ResultBox('box_correct', self.bg, big_box_pos)
 
         # Mix Button
-        self.mix_button = Button('mix', self.bg)
-        self.mix_button.rect[3] -= 15
-        mix_button_pos = (self.boxes[1].rect.centerx, self.boxes[1].rect.centery + 50)
-        self.mix_button.place_image(mix_button_pos, 'center')
 
+        # Grids
+        self.pantry_grid = Grid('pantry grid', 5, 5, origin=(self.pantry.origin[0] + 4, self.pantry.origin[1] + 6))
+        self.mixing_grid = Grid('mixing boxes', 1, 3, origin=(276, 65))
+        # Recipes attributes.
+        self.recipe_book = {
+            'dough': ['wheat', 'egg', 'water'],
+            'bread': [ 'dough', 'salt', 'yeast' ],
+            'dressing': ['vinegar', 'oil', 'herbs'],
+            'salad': [ 'lettuce', 'carrot', 'dressing' ],
+            'eggs and bacon': ['egg', 'red meat', 'oil'],
+            'orange juice': ['orange', 'orange', 'orange'],
+            'classic breakfast': [ 'orange juice', 'eggs and bacon', 'apple' ],
+            'fruit juice': ['apple', 'orange', 'water'],
+            'vegetable juice': ['carrot', 'lettuce', 'water'],
+            'soymilk': ['soybean', 'nuts', 'water'],
+            'three-course drinks': [ 'fruit juice', 'vegetable juice', 'soymilk' ],
+            'mayonnaise': ['egg', 'vinegar', 'oil'],
+            'egg sandwich': ['bread', 'egg', 'mayonnaise'],
+            'ice cream': ['cream', 'sugar', 'ice'],
+            'full-course meal': [ 'salad', 'egg sandwich', 'ice cream' ],
+            }
+        self.recipe_compendium = CraftCompendium(self.recipe_book)
+        self.goals = ('bread', 'salad', 'classic breakfast', 'three-course drinks', 'full-course meal')
+
+
+    def set_music(self):
+        if not os.path.exists('./sounds'):
+            root_sounds = './../sounds/'
+        else:
+            root_sounds = 'sounds/'
+        pygame.mixer.music.load(root_sounds + self.music + '.mp3')
+        pygame.mixer.music.set_volume(self.volume)
+        pygame.mixer.music.play(-1)
 
     def set_level(self):
         """Reset the button list with the mix button plus all food buttons.
@@ -107,86 +120,4 @@ class Settings():
         else:
             self.mix_button.active = True
 
-    def check_buttons(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_xy = pygame.mouse.get_pos()
-                for button in self.buttons:
-                    collide = button.check_collide(mouse_xy)
-                    if collide:
-                        return button
 
-    def switch_grid(self, filler):
-        """Move an object from within this grid into another. Remove from this grid."""
-        switched = False
-        if filler in self.pantry_grid.grid.values():
-            current_grid = self.pantry_grid.grid
-            dest_grid = self.mixing_grid.grid
-        elif filler in self.mixing_grid.grid.values():
-            current_grid = self.mixing_grid.grid
-            dest_grid = self.pantry_grid.grid
-        elif filler.name == self.big_box.result.name:
-            for coord, cell in self.pantry_grid.grid.items():
-                if cell == '':
-                    filler.rect.topleft = coord
-                    self.pantry_grid.grid[coord] = filler
-                    return
-        else:
-            print('error: it\'s not in either grid.')
-            print(filler)
-            return
-        for coord, cell in dest_grid.items():
-            if cell == '':
-                filler.rect.topleft = coord
-                dest_grid[coord] = filler
-                switched = True
-                break
-        if switched:
-            if self.big_box.active == False:
-                self.sfx_click.play()
-            for coord, cell in current_grid.items():
-                if filler == cell:
-                    current_grid[coord] = ''
-                    break
-        else:
-            self.sfx_denied.play()
-            print('failure to switch.')
-
-    def confirm_result_and_cont(self):
-        """Send the result product to the pantry, remove the mixed food, and reactivate screen elements."""
-        result_product = Button(self.big_box.result.name, self.bg)
-        self.switch_grid(result_product)
-        self.current_foods.append(result_product.name)
-        self.buttons.remove(self.big_box.result)
-        self.buttons.append(result_product)
-        for button in self.buttons:
-            button.active = True
-        self.big_box.success = False
-        self.big_box.active = False
-        self.big_box.result = ''
-
-    def mix_ingredients(self):
-        """Compare the ingredients in the mix boxes with the full formula. Return the mixed product if successful."""
-        mixing_foods = []
-        for food in self.mixing_grid.grid.values():
-            mixing_foods.append(food.name)
-        mixing_foods.sort()
-        # Check lvl full formula for matching recipe.
-        for product, materials in self.current_full_formula.items():
-            if mixing_foods == materials:
-                ## Add resulting product to current foods, but not buttons (yet). Turn on Result Box. Return product.
-                self.sfx_success.play()
-                self.big_box.success = True
-                result = Button(product, self.bg)
-                return result
-        self.sfx_failure.play()
-        self.big_box.success = False
-
-    def erase_mix_materials(self):
-        """Remove the food in the mixing grid from current foods, buttons, and grid."""
-        for coord, button in self.mixing_grid.grid.items():
-            self.buttons.remove(button)
-            self.current_foods.remove(button.name)
-            self.mixing_grid.grid[coord] = ''

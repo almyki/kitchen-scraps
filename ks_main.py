@@ -2,11 +2,14 @@
 #### Main module for the game Kitchen Scraps.
 
 import sys
+import os
 import pygame
 from PIL import Image
-from ks_environment import Background, Grid, ActiveImage, Button, DetectEvents
-from ks_settings import Settings
 from craft_compendium import CraftCompendium
+from ks_environment import Background, Grid, ActiveImage, Button, DetectEvents, MessageDisplay
+from ks_gamestate import RootPaths, GameMechanics
+from ks_settings import Settings
+
 
 # TODO change box to ? after starting new combo.
 #  change to check after mixing, then change to ingredient after click.
@@ -14,13 +17,12 @@ from craft_compendium import CraftCompendium
 
 
 ks = Settings('ks_bg')
+play_button = MessageDisplay('play', ks.bg, 'play', 'Ancient Modern Tales.otf', 16, (200, 100, 100))
 
 # Set up the game and level.
 pygame.init()
-pygame.mixer.music.load('sounds/' + ks.music + '.mp3')
-pygame.mixer.music.set_volume(0.3)
-pygame.mixer.music.play(-1)
 
+ks.set_music()
 ks.set_level()
 while True:
     ks.refresh_screen()
@@ -30,6 +32,7 @@ while True:
     clicked_button = ks.check_buttons()
     # If button is food item, switch grid if possible.
     if clicked_button:
+        print(clicked_button.name)
         if clicked_button.name in ks.current_foods and clicked_button.active:
             ks.switch_grid(clicked_button)
         # If button is 'Mix' and 'Mix' is active, try the mix. Activate and return O/X for Result Box.

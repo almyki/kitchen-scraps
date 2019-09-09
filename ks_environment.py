@@ -3,13 +3,95 @@
 
 import pygame
 import sys
+import os
 from PIL import Image
+pygame.font.init()
+
+
+
+
+
+class MessageDisplay():
+    """Create and display visuals of text messages. Include options like bg frames."""
+    def __init__(self, name, bg, msg, filename, font_size, font_color, frame, origin=(0,0)):
+        """Initialize attributes for MessageDisplay"""
+        # TODO Set default values for various attributes.
+        # TODO Create an option for the frame that creates a rect if no frame is specified."""
+        self.name = name
+        self.bg = bg
+        self.msg = msg
+        self.font = pygame.font.Font(root_fonts + filename, font_size)
+        self.font_color = font_color
+        self.img_srf = pygame.font.render(self.msg, antialias=False, color=self.color)
+        self.frame = frame
+        self.rect = self.frame.get_rect()
+        self.origin = origin
+
+    def place_image(self, xy, origin_pos='topleft'):
+        """Move the location of the button surface and rect."""
+        if origin_pos == 'topleft':
+            self.rect.topleft = xy
+        elif origin_pos == 'center':
+            self.rect.center = xy
+        self.origin = xy
+
+    def show_on_collide(self):
+        """Show the message upon collision. Have options to choose if msg hovers on mouse, on object, or other."""
+        pass
+    def refresh_msg(self):
+        """Show the message on refresh. Possibly add an option to darken rest of background."""
+
+
+
+    def prompt_screen(self):
+        """Show a full-page screen prompt message that spans multiple lines and wraps around images."""
+    def msg_button(self):
+        """Create a button out of a message. Consider breaking this into a subclass."""
+
+
+
+# class LevelScreen():
+#     """Display the levels of one section (10 max) as buttons in locked or unlocked states."""
+#     def __init__(self):
+#         """Initiate settings for LevelScreen."""
+#         self.bg
+#         self.levels = []
+#         self.unlocked_levels = []
+#         self.
+#         lock_box = ActiveImage(root_images + '/locked_lvl.png', self.bg)
+#         for level_img in level_imgs:
+#             level_img_srf = pygame.image.load(level_img)
+#             self.levels.append(Button(level_img_srf, self.bg))
+#         self.grid = Grid(rows=)
+
+    # def check_lock_states(self):
+    #     """Check what levels are unlocked."""
+    #     # TODO Create a JSON to hold save data of what the player has unlocked so far.
+    #     for level in self.levels:
+    #         if level in self.unlocked_levels:
+    #             level.active = True
+    #         else:
+    #             level.active = False
+    #
+    # def go_to_level(self, mouse_xy):
+    #     """Start the game level on click and confirmation."""
+    #     # TODO Create an intermediary confirmation screen.
+    #     #  Make a prompt message function or class that can be used here as well as within the level as normal.
+    #     for level in self.levels:
+    #         if level.active and level.self.rect.collidepoint(mouse_xy):
+    #             print('Level choice confirmed! Going to ' + level.name.title())
+    #             return level.name
+    #
+    # def refresh_screen(self):
+    #     """Refresh the screen."""
+    #     pass
+
 
 class Background():
     """Create all the background"""
-    def __init__(self, name):
+    def __init__(self, filename):
         self.name = name
-        self.filename = 'images/' + name + '.png'
+        self.filename = root_images + name
         self.img_srf = pygame.image.load(self.filename)
         self.rect = self.img_srf.get_rect()
         self.dim = (self.rect[2], self.rect[3])
@@ -68,11 +150,11 @@ class ActiveImage():
         self.name = name
         self.bg = bg
         self.filename = self.convert_to_codehappy_string(name)
-        self.img_srf = pygame.image.load('images/' + self.filename + '.png')
-        self.def_srf = pygame.image.load('images/' + self.filename + '.png')
-        gry_srf = Image.open('images/' + self.filename + '.png').convert('LA')
-        gry_srf.save('images/' + self.filename + '_gry.png')
-        self.gry_srf = pygame.image.load('images/' + self.filename + '_gry.png')
+        self.img_srf = pygame.image.load(root_images + self.filename + '.png')
+        self.def_srf = pygame.image.load(root_images + self.filename + '.png')
+        gry_srf = Image.open(root_images  + self.filename + '.png').convert('LA')
+        gry_srf.save(root_images + self.filename + '_gry.png')
+        self.gry_srf = pygame.image.load(root_images + self.filename + '_gry.png')
         self.rect = self.img_srf.get_rect()
         self.origin = origin
         self.rect.move_ip(origin)
@@ -108,7 +190,7 @@ class Button(ActiveImage):
     def __init__(self, name, bg, origin=(0, 0)):
         """Initialize the parent attributes and Button-specific attributes."""
         super().__init__(name, bg, origin)
-        self.hvr_srf = pygame.image.load('images/' + self.filename + '_hvr.png')
+        self.hvr_srf = pygame.image.load(root_images + self.filename + '_hvr.png')
 
     def check_collide(self, mouse_xy):
         """Check if mouse click collides with self."""
@@ -142,12 +224,12 @@ class ResultBox(Button):
         """Initialize ResultBox attributes."""
         super().__init__(name, bg, origin)
         self.name = 'box_correct'
-        self.wht_srf = pygame.image.load('images/box_blank.png')
-        self.q_srf = pygame.image.load('images/box_questionmark.png')
-        self.x_srf = pygame.image.load('images/box_wrong.png')
-        self.x_hvr = pygame.image.load('images/box_wrong_hvr.png')
-        self.c_srf = pygame.image.load('images/box_correct.png')
-        self.c_hvr = pygame.image.load('images/box_correct_hvr.png')
+        self.wht_srf = pygame.image.load(root_images + 'box_blank.png')
+        self.q_srf = pygame.image.load(root_images + 'box_questionmark.png')
+        self.x_srf = pygame.image.load(root_images + 'box_wrong.png')
+        self.x_hvr = pygame.image.load(root_images + 'box_wrong_hvr.png')
+        self.c_srf = pygame.image.load(root_images + 'box_correct.png')
+        self.c_hvr = pygame.image.load(root_images + 'box_correct_hvr.png')
         self.active = False
         self.success = False
         self.rect.center = origin

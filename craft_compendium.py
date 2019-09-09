@@ -1,24 +1,24 @@
 
 
-import PIL
-import os
-
-for filename in os.listdir('images/'):
-    if 'gry_' in filename:
-        original = 'images/' + filename
-        filename = filename.replace('gry_', '')
-        filanem = filename.replace('.png', '_gry.png')
-        revised = 'images/' + filename
-        os.rename(original, revised)
-    if 'hvr_' in filename:
-        print(filename)
-        original = 'images/' + filename
-        print(original)
-        filename = filename.replace('hvr_', '')
-        filename = filename.replace('.png', '_hvr.png')
-        revised = 'images/' + filename
-        print(filename)
-        os.rename(original, revised)
+# import PIL
+# import os
+#
+# for filename in os.listdir('images/'):
+#     if 'gry_' in filename:
+#         original = 'images/' + filename
+#         filename = filename.replace('gry_', '')
+#         filanem = filename.replace('.png', '_gry.png')
+#         revised = 'images/' + filename
+#         os.rename(original, revised)
+#     if 'hvr_' in filename:
+#         print(filename)
+#         original = 'images/' + filename
+#         print(original)
+#         filename = filename.replace('hvr_', '')
+#         filename = filename.replace('.png', '_hvr.png')
+#         revised = 'images/' + filename
+#         print(filename)
+#         os.rename(original, revised)
 
 # The class 'CraftCompendium' can be used for any crafting system.
 # TODO Add ability to sort by category and tags.
